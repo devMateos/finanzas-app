@@ -9,8 +9,7 @@
       <p>Gastos Totales: {{ totalExpenses }}</p>
     </div>
     <div class="actions">
-      <button @click="addTransaction('income')">Añadir Ingreso</button>
-      <button @click="addTransaction('expense')">Añadir Gasto</button>
+      <AddTransaction @transaction-added="fetchTransactions" />
     </div>
   </div>
 </template>
@@ -18,8 +17,9 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { getAuth, signOut } from 'firebase/auth'
-import { collection, getDocs } from 'firebase/firestore'
+import { collection, query, where, getDocs } from 'firebase/firestore'
 import { db } from '@/firebase'
+import AddTransaction from '@/components/AddTransation.vue'
 
 const auth = getAuth()
 const user = ref(auth.currentUser)
@@ -27,7 +27,10 @@ const totalIncome = ref(0)
 const totalExpenses = ref(0)
 
 const fetchTransactions = async () => {
-  const querySnapshot = await getDocs(collection(db, 'transactions'))
+  totalIncome.value = 0
+  totalExpenses.value = 0
+  const q = query(collection(db, 'transactions'), where('uid', '==', user.value.uid))
+  const querySnapshot = await getDocs(q)
   querySnapshot.forEach((doc) => {
     const data = doc.data()
     if (data.type === 'income') {
@@ -45,11 +48,6 @@ const logout = async () => {
   } catch (error) {
     alert('Error al cerrar sesión: ' + error.message)
   }
-}
-
-const addTransaction = (type) => {
-  // Lógica para añadir una nueva transacción
-  alert(`Añadir ${type === 'income' ? 'Ingreso' : 'Gasto'}`)
 }
 
 onMounted(() => {
